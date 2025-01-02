@@ -4,7 +4,6 @@ from supabase import create_client, Client
 import os
 import logging
 
-# Initialize logging
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
@@ -26,14 +25,12 @@ async def update_location(request):
         return json({"error": "Missing required fields"}, status=400)
 
     try:
-        # Specify the conflict target to handle conflicts by 'device_id'
         response_data = supabase.table("device_location").upsert({
             "device_id": device_id,
             "latitude": latitude,
             "longitude": longitude
         }, on_conflict=["device_id"]).execute()
 
-        # Check if the operation was successful
         if response_data.data:
             return json({"message": "Location data updated successfully"}, status=200)
         elif response_data.error:
