@@ -21,13 +21,14 @@ async def update_location(request):
         return json({"error": "Missing required fields"}, status=400)
 
     try:
+        # Specify the conflict target to handle conflicts by 'device_id'
         response_data = supabase.table("device_location").upsert({
             "device_id": device_id,
             "latitude": latitude,
             "longitude": longitude
-        }).execute()
+        }, on_conflict=["device_id"]).execute()
 
-        if response_data.status_code == 201:
+        if response_data.status_code == 201 or response_data.status_code == 200:
             return json({"message": "Location data updated successfully"}, status=200)
         else:
             app.ext.logger.error(f"Upsert failed: {response_data}")
@@ -36,6 +37,7 @@ async def update_location(request):
     except Exception as e:
         app.ext.logger.error(f"Error in updating location: {str(e)}")
         return json({"error": "An unexpected error occurred", "details": str(e)}, status=500)
+
 
 
 @app.get("/location/<device_id>")
