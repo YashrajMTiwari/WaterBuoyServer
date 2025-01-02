@@ -4,6 +4,10 @@ from supabase import create_client, Client
 import os
 import logging
 
+# Initialize logging
+logging.basicConfig(level=logging.ERROR)
+logger = logging.getLogger(__name__)
+
 app = Sanic("DeviceLocationService")
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://yakviserjdksmpqvnumd.supabase.co")
@@ -22,17 +26,22 @@ async def update_location(request):
         return json({"error": "Missing required fields"}, status=400)
 
     try:
+        # Specify the conflict target to handle conflicts by 'device_id'
         response_data = supabase.table("device_location").upsert({
             "device_id": device_id,
             "latitude": latitude,
             "longitude": longitude
         }, on_conflict=["device_id"]).execute()
 
-        if response_data.status_code == 201 or response_data.status_code == 200:
+        # Check if the operation was successful
+        if response_data.data:
             return json({"message": "Location data updated successfully"}, status=200)
-        else:
-            logger.error(f"Upsert failed: {response_data}")
+        elif response_data.error:
+            logger.error(f"Upsert failed: {response_data.error}")
             return json({"error": "Failed to update location data"}, status=500)
+        else:
+            logger.error(f"Unexpected response: {response_data}")
+            return json({"error": "Unexpected error occurred"}, status=500)
 
     except Exception as e:
         logger.error(f"Error in updating location: {str(e)}")
