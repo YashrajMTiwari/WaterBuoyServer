@@ -2,6 +2,7 @@ from sanic import Sanic
 from sanic.response import json
 from supabase import create_client, Client
 import os
+import logging
 
 app = Sanic("DeviceLocationService")
 
@@ -21,7 +22,6 @@ async def update_location(request):
         return json({"error": "Missing required fields"}, status=400)
 
     try:
-        # Specify the conflict target to handle conflicts by 'device_id'
         response_data = supabase.table("device_location").upsert({
             "device_id": device_id,
             "latitude": latitude,
@@ -31,13 +31,12 @@ async def update_location(request):
         if response_data.status_code == 201 or response_data.status_code == 200:
             return json({"message": "Location data updated successfully"}, status=200)
         else:
-            app.ext.logger.error(f"Upsert failed: {response_data}")
+            logger.error(f"Upsert failed: {response_data}")
             return json({"error": "Failed to update location data"}, status=500)
 
     except Exception as e:
-        app.ext.logger.error(f"Error in updating location: {str(e)}")
+        logger.error(f"Error in updating location: {str(e)}")
         return json({"error": "An unexpected error occurred", "details": str(e)}, status=500)
-
 
 
 @app.get("/location/<device_id>")
@@ -51,7 +50,7 @@ async def get_location(request, device_id):
             return json({"error": "Device not found"}, status=404)
 
     except Exception as e:
-        app.ext.logger.error(f"Error in fetching location: {str(e)}")
+        logger.error(f"Error in fetching location: {str(e)}")
         return json({"error": "An unexpected error occurred", "details": str(e)}, status=500)
 
 
